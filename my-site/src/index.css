@@ -1,0 +1,530 @@
+/* 
+:root {
+  font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #e2e8f0;
+  background: #020617;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: radial-gradient(circle at top, #0f172a 0%, #020617 55%);
+}
+
+a {
+  color: inherit;
+}
+
+#root {
+  width: 100%;
+}
+
+.page {
+  min-height: 100vh;
+  padding: 2rem 1rem 2.5rem;
+}
+
+.app-shell {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.top-nav {
+  display: inline-flex;
+  gap: 0.5rem;
+  padding: 0.35rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #334155;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(4px);
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #93c5fd;
+  border-radius: 999px;
+  font-weight: 600;
+  padding: 0.5rem 0.9rem;
+}
+
+.nav-link:hover {
+  background: rgba(37, 99, 235, 0.15);
+}
+
+.nav-link.active {
+  background: #1d4ed8;
+  color: #ffffff;
+}
+
+.hero {
+  margin-bottom: 1.5rem;
+}
+
+.hero-title {
+  margin: 0;
+  font-size: clamp(1.6rem, 2vw + 1rem, 2.5rem);
+  line-height: 1.15;
+}
+
+.hero-subtitle {
+  margin: 0.55rem 0 0;
+  color: #94a3b8;
+  max-width: 760px;
+}
+
+.grid-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 330px) 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.panel {
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 10px 28px rgba(2, 6, 23, 0.35);
+}
+
+.panel h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: #cbd5e1;
+  font-size: 0.92rem;
+}
+
+.input-control {
+  width: 100%;
+  margin-bottom: 0.8rem;
+  padding: 0.65rem 0.72rem;
+  border-radius: 10px;
+  border: 1px solid #475569;
+  background: #0f172a;
+  color: #f1f5f9;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 0.4rem;
+}
+
+.btn {
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 0.65rem 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: #2563eb;
+  color: #fff;
+}
+
+.btn-secondary {
+  background: transparent;
+  border-color: #60a5fa;
+  color: #e2e8f0;
+}
+
+.btn:hover {
+  filter: brightness(1.08);
+}
+
+.error-message {
+  margin-top: 0.8rem;
+  border: 1px solid #7f1d1d;
+  background: rgba(127, 29, 29, 0.2);
+  color: #fecaca;
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+}
+
+.results-head {
+  margin-bottom: 0.75rem;
+}
+
+.chip-row {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.chip {
+  border: 1px solid #334155;
+  background: #0f172a;
+  border-radius: 999px;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.86rem;
+  color: #bfdbfe;
+}
+
+.status-text {
+  margin: 0 0 0.7rem;
+  color: #93c5fd;
+}
+
+.heatmap-wrap {
+  min-height: 320px;
+  border-radius: 12px;
+  border: 1px dashed #334155;
+  background: #020617;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.9rem;
+}
+
+.heatmap-image {
+  width: 100%;
+  max-width: 720px;
+  border-radius: 10px;
+}
+
+.placeholder {
+  color: #94a3b8;
+  text-align: center;
+  max-width: 450px;
+}
+
+.report-box {
+  margin-top: 0.9rem;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  background: #0f172a;
+  padding: 0.85rem;
+}
+
+.report-box h3 {
+  margin-top: 0;
+}
+
+.report-box pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+}
+
+.stuff-panel {
+  max-width: 760px;
+}
+
+.metric-list {
+  margin: 0 0 0.8rem;
+  padding-left: 1.25rem;
+}
+
+.metric-list li + li {
+  margin-top: 0.35rem;
+}
+
+.note-text {
+  margin: 0;
+  color: #cbd5e1;
+}
+
+@media (max-width: 860px) {
+  .grid-layout {
+    grid-template-columns: 1fr;
+  }
+} */
+:root {
+  font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #e2e8f0;
+  background: #020617;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: radial-gradient(circle at top, #0f172a 0%, #020617 55%);
+}
+
+a {
+  color: inherit;
+}
+
+#root {
+  width: 100%;
+}
+
+.page {
+  min-height: 100vh;
+  padding: 2rem 1rem 2.5rem;
+}
+
+.app-shell {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.top-nav {
+  display: inline-flex;
+  gap: 0.5rem;
+  padding: 0.35rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #334155;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(4px);
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #93c5fd;
+  border-radius: 999px;
+  font-weight: 600;
+  padding: 0.5rem 0.9rem;
+}
+
+.nav-link:hover {
+  background: rgba(37, 99, 235, 0.15);
+}
+
+.nav-link.active {
+  background: #1d4ed8;
+  color: #ffffff;
+}
+
+.hero {
+  margin-bottom: 1.5rem;
+}
+
+.hero-title {
+  margin: 0;
+  font-size: clamp(1.6rem, 2vw + 1rem, 2.5rem);
+  line-height: 1.15;
+}
+
+.hero-subtitle {
+  margin: 0.55rem 0 0;
+  color: #94a3b8;
+  max-width: 760px;
+}
+
+.grid-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 330px) 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.panel {
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 10px 28px rgba(2, 6, 23, 0.35);
+}
+
+.panel h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: #cbd5e1;
+  font-size: 0.92rem;
+}
+
+.input-control {
+  width: 100%;
+  margin-bottom: 0.8rem;
+  padding: 0.65rem 0.72rem;
+  border-radius: 10px;
+  border: 1px solid #475569;
+  background: #0f172a;
+  color: #f1f5f9;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 0.4rem;
+}
+
+.btn {
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 0.65rem 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: #2563eb;
+  color: #fff;
+}
+
+.btn-secondary {
+  background: transparent;
+  border-color: #60a5fa;
+  color: #e2e8f0;
+}
+
+.btn:hover {
+  filter: brightness(1.08);
+}
+
+.error-message {
+  margin-top: 0.8rem;
+  border: 1px solid #7f1d1d;
+  background: rgba(127, 29, 29, 0.2);
+  color: #fecaca;
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+}
+
+.results-head {
+  margin-bottom: 0.75rem;
+}
+
+.chip-row {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.chip {
+  border: 1px solid #334155;
+  background: #0f172a;
+  border-radius: 999px;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.86rem;
+  color: #bfdbfe;
+}
+
+.status-text {
+  margin: 0 0 0.7rem;
+  color: #93c5fd;
+}
+
+/* NEW: wrapper for side-by-side heatmap + report */
+.viz-content {
+  display: block;
+}
+
+.viz-content.has-report {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.heatmap-wrap {
+  min-height: 320px;
+  border-radius: 12px;
+  border: 1px dashed #334155;
+  background: #020617;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.9rem;
+}
+
+.heatmap-image {
+  width: 100%;
+  max-width: 720px;
+  border-radius: 10px;
+}
+
+.placeholder {
+  color: #94a3b8;
+  text-align: center;
+  max-width: 450px;
+}
+
+.report-box {
+  margin-top: 0.9rem;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  background: #0f172a;
+  padding: 0.85rem;
+}
+
+.side-report {
+  margin-top: 0;
+  max-height: 70vh;
+  overflow: auto;
+}
+
+.report-box h3 {
+  margin-top: 0;
+}
+
+.report-box pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+}
+
+.stuff-panel {
+  max-width: 760px;
+}
+
+.metric-list {
+  margin: 0 0 0.8rem;
+  padding-left: 1.25rem;
+}
+
+.metric-list li + li {
+  margin-top: 0.35rem;
+}
+
+.note-text {
+  margin: 0;
+  color: #cbd5e1;
+}
+
+/* when report is side-by-side, stack on medium screens */
+@media (max-width: 1200px) {
+  .viz-content.has-report {
+    grid-template-columns: 1fr;
+  }
+
+  .side-report {
+    max-height: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .grid-layout {
+    grid-template-columns: 1fr;
+  }
+}
