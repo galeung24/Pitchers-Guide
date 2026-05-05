@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+pandas
+numpy
+matplotlib
+python-multipart
+
+scikit-learn
+joblib
+pybaseball
+
