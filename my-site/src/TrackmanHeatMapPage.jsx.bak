@@ -1,0 +1,377 @@
+
+import { Link } from "react-router-dom";
+import { useMemo, useState } from "react";
+
+const API_BASE = "http://127.0.0.1:8000";
+
+export default function TrackmanHeatmapPage() {
+  const [file, setFile] = useState(null);
+  const [meta, setMeta] = useState(null);
+
+  const [pitcher, setPitcher] = useState("");
+  const [pitchType, setPitchType] = useState("");
+  const [pitchTypeSource, setPitchTypeSource] = useState("tagged");
+
+  const [imgUrl, setImgUrl] = useState(null);
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const pitchTypeOptions = useMemo(() => {
+    if (!meta) return [];
+    return pitchTypeSource === "auto"
+      ? meta.auto_pitch_types
+      : meta.tagged_pitch_types;
+  }, [meta, pitchTypeSource]);
+
+  async function handleFile(e) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+
+    setFile(f);
+    setMeta(null);
+    setImgUrl(null);
+    setReport(null);
+    setError(null);
+
+    const form = new FormData();
+    form.append("file", f);
+
+    const res = await fetch(`${API_BASE}/metadata`, {
+      method: "POST",
+      body: form,
+    });
+
+    const data = await res.json();
+    setMeta(data);
+  }
+
+  async function generate() {
+    if (!file) return;
+
+    setLoading(true);
+    setError(null);
+    setReport(null);
+
+    const form = new FormData();
+    form.append("file", file);
+
+    if (pitcher) form.append("pitcher", pitcher);
+    if (pitchType) form.append("pitch_type", pitchType);
+    form.append("pitch_type_source", pitchTypeSource);
+
+    const res = await fetch(`${API_BASE}/heatmap/upload`, {
+      method: "POST",
+      body: form,
+    });
+
+    const contentType = res.headers.get("content-type") || "";
+
+    if (contentType.includes("application/json")) {
+      const data = await res.json();
+      setError(data.error || "Unknown error");
+      setLoading(false);
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    setImgUrl(url);
+    setLoading(false);
+  }
+
+  async function generateReport() {
+    if (!file) return;
+
+    setLoading(true);
+    setError(null);
+    setReport(null);
+
+    const form = new FormData();
+    form.append("file", file);
+
+    if (pitcher) form.append("pitcher", pitcher);
+    if (pitchType) form.append("pitch_type", pitchType);
+    form.append("pitch_type_source", pitchTypeSource);
+
+    const res = await fetch(`${API_BASE}/scouting-report`, {
+      method: "POST",
+      body: form,
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.detail || data.error || "Error generating report");
+      setLoading(false);
+      return;
+    }
+
+    setReport(data);
+    setLoading(false);
+  }
+
+  const styles = {
+    page: {
+      minHeight: "100vh",
+      background: "#0f172a",
+      color: "white",
+      padding: "32px",
+      fontFamily: "Inter, sans-serif",
+    },
+    nav: {
+      marginBottom: "20px",
+      display: "flex",
+      gap: "16px",
+      alignItems: "center",
+    },
+    navLink: {
+      color: "#93c5fd",
+      textDecoration: "none",
+      fontWeight: 600,
+    },
+    header: {
+      marginBottom: "24px",
+    },
+    title: {
+      margin: 0,
+      fontSize: "2.5rem",
+      fontWeight: 700,
+    },
+    subtitle: {
+      marginTop: "8px",
+      color: "#94a3b8",
+      fontSize: "1rem",
+    },
+    layout: {
+      display: "grid",
+      gridTemplateColumns: "320px 1fr",
+      gap: "24px",
+      alignItems: "start",
+    },
+    card: {
+      background: "#1e293b",
+      borderRadius: "16px",
+      padding: "20px",
+      boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
+    },
+    sectionTitle: {
+      marginTop: 0,
+      marginBottom: "16px",
+      fontSize: "1.1rem",
+      fontWeight: 600,
+    },
+    label: {
+      display: "block",
+      marginBottom: "6px",
+      fontSize: "0.95rem",
+      color: "#cbd5e1",
+    },
+    input: {
+      width: "100%",
+      marginBottom: "14px",
+      padding: "10px 12px",
+      borderRadius: "10px",
+      border: "1px solid #475569",
+      background: "#0f172a",
+      color: "white",
+      boxSizing: "border-box",
+    },
+    buttonRow: {
+      display: "flex",
+      gap: "12px",
+      marginTop: "10px",
+      flexWrap: "wrap",
+    },
+    primaryButton: {
+      padding: "12px 16px",
+      borderRadius: "10px",
+      border: "none",
+      background: "#2563eb",
+      color: "white",
+      fontWeight: 600,
+      cursor: "pointer",
+    },
+    secondaryButton: {
+      padding: "12px 16px",
+      borderRadius: "10px",
+      border: "1px solid #60a5fa",
+      background: "transparent",
+      color: "white",
+      fontWeight: 600,
+      cursor: "pointer",
+    },
+    error: {
+      marginTop: "16px",
+      color: "#fca5a5",
+      background: "#450a0a",
+      padding: "10px 12px",
+      borderRadius: "10px",
+    },
+    heatmapWrap: {
+      marginTop: "16px",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      background: "#0f172a",
+      borderRadius: "12px",
+      padding: "16px",
+      minHeight: "300px",
+    },
+    heatmapImg: {
+      width: "100%",
+      maxWidth: "700px",
+      borderRadius: "10px",
+    },
+    placeholder: {
+      color: "#94a3b8",
+      textAlign: "center",
+      padding: "48px 24px",
+    },
+    status: {
+      color: "#93c5fd",
+      marginBottom: "12px",
+    },
+    summaryBar: {
+      display: "flex",
+      gap: "12px",
+      flexWrap: "wrap",
+      marginBottom: "16px",
+    },
+    statChip: {
+      background: "#0f172a",
+      border: "1px solid #334155",
+      borderRadius: "999px",
+      padding: "8px 12px",
+      color: "#cbd5e1",
+      fontSize: "0.9rem",
+    },
+    reportBox: {
+      marginTop: "20px",
+      background: "#0f172a",
+      borderRadius: "12px",
+      padding: "16px",
+      overflowX: "auto",
+    },
+    pre: {
+      margin: 0,
+      whiteSpace: "pre-wrap",
+      wordBreak: "break-word",
+      color: "#e2e8f0",
+    },
+  };
+
+  return (
+    <div style={styles.page}>
+      <div style={styles.nav}>
+        <Link to="/" style={styles.navLink}>Heatmaps</Link>
+        <span style={{ color: "#475569" }}>|</span>
+        <Link to="/stuffplus" style={styles.navLink}>Stuff+</Link>
+      </div>
+
+      <div style={styles.header}>
+        <h1 style={styles.title}>Trackman Pitch Analytics</h1>
+        <div style={styles.subtitle}>
+          Generate heatmaps and scouting reports from Trackman CSV data
+        </div>
+      </div>
+
+      <div style={styles.layout}>
+        <div style={styles.card}>
+          <h2 style={styles.sectionTitle}>Controls</h2>
+
+          <label style={styles.label}>Upload CSV</label>
+          <input
+            type="file"
+            accept=".csv"
+            onChange={handleFile}
+            style={styles.input}
+          />
+
+          {meta && (
+            <>
+              <label style={styles.label}>Pitcher</label>
+              <select
+                value={pitcher}
+                onChange={(e) => setPitcher(e.target.value)}
+                style={styles.input}
+              >
+                <option value="">All</option>
+                {meta.pitchers.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+
+              <label style={styles.label}>Pitch Type Source</label>
+              <select
+                value={pitchTypeSource}
+                onChange={(e) => setPitchTypeSource(e.target.value)}
+                style={styles.input}
+              >
+                <option value="tagged">Tagged</option>
+                <option value="auto">Auto</option>
+              </select>
+
+              <label style={styles.label}>Pitch Type</label>
+              <select
+                value={pitchType}
+                onChange={(e) => setPitchType(e.target.value)}
+                style={styles.input}
+              >
+                <option value="">All</option>
+                {pitchTypeOptions.map((pt) => (
+                  <option key={pt} value={pt}>
+                    {pt}
+                  </option>
+                ))}
+              </select>
+
+              <div style={styles.buttonRow}>
+                <button onClick={generate} style={styles.primaryButton}>
+                  {loading ? "Generating..." : "Generate Heatmap"}
+                </button>
+
+                <button onClick={generateReport} style={styles.secondaryButton}>
+                  {loading ? "Generating..." : "Generate Scouting Report"}
+                </button>
+              </div>
+            </>
+          )}
+
+          {error && <div style={styles.error}>{error}</div>}
+        </div>
+
+        <div style={styles.card}>
+          <h2 style={styles.sectionTitle}>Visualization</h2>
+
+          <div style={styles.summaryBar}>
+            <div style={styles.statChip}>Pitcher: {pitcher || "All"}</div>
+            <div style={styles.statChip}>Source: {pitchTypeSource}</div>
+            <div style={styles.statChip}>Pitch Type: {pitchType || "All"}</div>
+          </div>
+
+          {loading && <div style={styles.status}>Processing Trackman data...</div>}
+
+          <div style={styles.heatmapWrap}>
+            {imgUrl ? (
+              <img src={imgUrl} alt="Heatmap" style={styles.heatmapImg} />
+            ) : (
+              <div style={styles.placeholder}>
+                Upload a CSV and generate a heatmap to see results here.
+              </div>
+            )}
+          </div>
+
+          {report && (
+            <div style={styles.reportBox}>
+              <h3 style={{ marginTop: 0 }}>Scouting Report</h3>
+              <pre style={styles.pre}>{JSON.stringify(report, null, 2)}</pre>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
