@@ -8,4 +8,4 @@ python-multipart
 scikit-learn
 joblib
 pybaseball
-
+scipy
