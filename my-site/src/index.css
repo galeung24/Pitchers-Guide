@@ -249,6 +249,7 @@ label {
     grid-template-columns: 1fr;
   }
 } */
+
 :root {
   font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -493,6 +494,39 @@ label {
   color: #e2e8f0;
   font-size: 0.9rem;
 }
+.table-wrap {
+  overflow-x: auto;
+}
+
+.metrics-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.metrics-table th,
+.metrics-table td {
+  border-bottom: 1px solid #334155;
+  padding: 0.45rem 0.5rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.metrics-table th {
+  color: #bfdbfe;
+  font-weight: 700;
+}
+
+.adjustment-list {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.adjustment-list li + li {
+  margin-top: 0.25rem;
+}
+
+
 
 .stuff-panel {
   max-width: 760px;
