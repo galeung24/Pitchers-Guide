@@ -25,7 +25,11 @@ if os.path.exists(stuff_plus_model_path):
 # Allow React to talk to backend later
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "https://pitchers-guide.vercel.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -172,8 +176,8 @@ def summarize_trackman(df: pd.DataFrame):
 
                 "avg_velo": float(pd.to_numeric(g["RelSpeed"], errors="coerce").mean()) if "RelSpeed" in g.columns else None,
                 "avg_spin": float(pd.to_numeric(g["SpinRate"], errors="coerce").mean()) if "SpinRate" in g.columns else None,
-                "avg_ivb": float(pd.to_numeric(g["InducedVertBreak"], errors="coerce").mean()) if "InducedVertBreak" in g.columns else None,
-                "avg_hb": float(pd.to_numeric(g["HorzBreak"], errors="coerce").mean()) if "HorzBreak" in g.columns else None,
+                "avg_ivb": float(pd.to_numeric(g["InducedVertBreak"], errors="coerce").mean() / 12) if "InducedVertBreak" in g.columns else None,
+                "avg_hb": float(pd.to_numeric(g["HorzBreak"], errors="coerce").mean() / 12) if "HorzBreak" in g.columns else None,
 
                 "zone_rate": round(zone_rate, 3),
                 "high_rate": round(high_rate, 3),
@@ -320,11 +324,14 @@ async def heatmap_upload(
         df = df[df[pitch_col].astype(str).str.contains(pitch_type, case=False, na=False)]
 
     if count and "Balls" in df.columns and "Strikes" in df.columns:
-        balls, strikes = count.split("-")
-        df = df[
-            (pd.to_numeric(df["Balls"], errors="coerce") == int(balls)) &
-            (pd.to_numeric(df["Strikes"], errors="coerce") == int(strikes))
-        ]
+    
+        if "-" in count:
+            balls, strikes = count.split("-")
+
+            df = df[
+                (pd.to_numeric(df["Balls"], errors="coerce") == int(balls)) &
+                (pd.to_numeric(df["Strikes"], errors="coerce") == int(strikes))
+            ]
 
     if batter_side and "BatterSide" in df.columns:
         df = df[df["BatterSide"].astype(str).str.upper() == batter_side.upper()]
