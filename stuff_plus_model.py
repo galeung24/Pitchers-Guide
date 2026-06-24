@@ -851,6 +851,7 @@ def _normalize_pitch_type_name(value: str) -> str:
     mapping = {
         "fourseamfastball": "FourSeam",
         "4seam": "FourSeam",
+        "fastball": "FourSeam",
         "ff": "FourSeam",
         "sinker": "Sinker",
         "si": "Sinker",
