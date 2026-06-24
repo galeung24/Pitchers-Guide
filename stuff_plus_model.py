@@ -1266,8 +1266,34 @@ def build_metric_percentile_summary(scored_df: pd.DataFrame, artifacts: StuffPlu
         for col in PITCH_METRIC_COLUMNS:
             avg_val = float(pd.to_numeric(g[col], errors="coerce").mean()) if col in g.columns else np.nan
             label = METRIC_LABELS[col]
-            pct = _percentile_from_sorted(ref.get(col, []), avg_val)
-            mlb_avg = float(np.nanmean(ref.get(col, []))) if ref.get(col, []) else None
+
+            ref_values = ref.get(col, [])
+
+            # For horizontal movement, raw signed percentile is misleading.
+            # RHP sliders/curveballs usually have negative HB for glove-side sweep.
+            # Convert HB to "sweep magnitude" for breaking balls.
+            if col == "pfx_x" and bucket == "Breaking":
+                if throws == "R":
+                    pct_val = -avg_val
+                    pct_ref = [-x for x in ref_values]
+                else:
+                    pct_val = avg_val
+                    pct_ref = ref_values
+
+                pct_ref = sorted([x for x in pct_ref if not pd.isna(x)])
+                pct = _percentile_from_sorted(pct_ref, pct_val)
+
+            # For vertical movement on breaking balls, lower/more negative can be useful.
+            # Flip it so more depth ranks higher instead of raw higher IVB ranking higher.
+            elif col == "pfx_z" and bucket == "Breaking":
+                pct_val = -avg_val
+                pct_ref = sorted([-x for x in ref_values if not pd.isna(x)])
+                pct = _percentile_from_sorted(pct_ref, pct_val)
+
+            else:
+                pct = _percentile_from_sorted(ref_values, avg_val)
+
+            mlb_avg = float(np.nanmean(ref_values)) if ref_values else None
             metrics[f"{label}_avg"] = None if np.isnan(avg_val) else round(avg_val, 2)
             metrics[f"{label}_percentile"] = pct
             metrics[f"{label}_mlb_avg"] = None if mlb_avg is None or np.isnan(mlb_avg) else round(mlb_avg, 2)
