@@ -1229,7 +1229,9 @@ def build_metric_percentile_summary(scored_df: pd.DataFrame, artifacts: StuffPlu
     if scored_df.empty:
         return []
 
-    # Normalize column names (Trackman -> Statcast-like) before metric aggregation.
+    # Normalize TrackMan columns into Statcast-like model columns.
+    # Important: _build_reference_frame converts HorzBreak / InducedVertBreak
+    # into pfx_x / pfx_z in FEET for model/reference comparison.
     ref_df = _build_reference_frame(scored_df.copy())
 
     if "stuff_plus" in scored_df.columns:
@@ -1247,13 +1249,16 @@ def build_metric_percentile_summary(scored_df: pd.DataFrame, artifacts: StuffPlu
     group_cols = ["Pitcher", "pitch_type", "pitch_bucket", "p_throws"]
 
     rows: List[Dict[str, object]] = []
+
     for keys, g in ref_df.groupby(group_cols, dropna=False):
         if not isinstance(keys, tuple):
             keys = (keys,)
+
         key_map = {group_cols[i]: keys[i] for i in range(len(group_cols))}
         pitch_type = str(key_map.get("pitch_type", "Unknown"))
         bucket = str(key_map.get("pitch_bucket", "Other"))
         throws = str(key_map.get("p_throws", "Unknown"))
+
         ref = (
             artifacts.mlb_reference.get(f"type:{pitch_type}|{throws}")
             or artifacts.mlb_reference.get(f"type:{pitch_type}|Unknown")
@@ -1263,46 +1268,75 @@ def build_metric_percentile_summary(scored_df: pd.DataFrame, artifacts: StuffPlu
         )
 
         metrics: Dict[str, object] = {}
+
         for col in PITCH_METRIC_COLUMNS:
             avg_val = float(pd.to_numeric(g[col], errors="coerce").mean()) if col in g.columns else np.nan
             label = METRIC_LABELS[col]
 
-            ref_values = ref.get(col, [])
+            ref_values = [float(x) for x in ref.get(col, []) if not pd.isna(x)]
 
-            # For horizontal movement, raw signed percentile is misleading.
-            # RHP sliders/curveballs usually have negative HB for glove-side sweep.
-            # Convert HB to "sweep magnitude" for breaking balls.
+            # By this point, avg_val for pfx_x / pfx_z should be in FEET
+            # because _build_reference_frame calls _normalize_columns.
+            #
+            # For display, coaches expect TrackMan movement in INCHES.
+            # For percentile math, compare in FEET against the MLB reference.
+            display_avg = avg_val
+            pct_val = avg_val
+            pct_ref = ref_values
+
+            if col in {"pfx_x", "pfx_z"} and not np.isnan(avg_val):
+                # If avg_val looks like feet, convert to inches for display.
+                # If it somehow still looks like inches, leave display alone
+                # but convert percentile value to feet.
+                if abs(avg_val) <= 4:
+                    display_avg = avg_val * 12.0
+                    pct_val = avg_val
+                else:
+                    display_avg = avg_val
+                    pct_val = avg_val / 12.0
+
+                # MLB reference should usually be feet, but guard just in case.
+                if pct_ref and float(np.nanmedian(np.abs(pct_ref))) > 4:
+                    pct_ref = [x / 12.0 for x in pct_ref]
+
+            # Horizontal break percentiles are misleading if you rank raw signed values.
+            # For RHP breaking balls, glove-side sweep is usually negative HB.
+            # Flip RHP breaking-ball HB so more sweep ranks higher.
             if col == "pfx_x" and bucket == "Breaking":
                 if throws == "R":
-                    pct_val = -avg_val
-                    pct_ref = [-x for x in ref_values]
-                else:
-                    pct_val = avg_val
-                    pct_ref = ref_values
+                    pct_val = -pct_val
+                    pct_ref = [-x for x in pct_ref]
 
                 pct_ref = sorted([x for x in pct_ref if not pd.isna(x)])
                 pct = _percentile_from_sorted(pct_ref, pct_val)
 
-            # For vertical movement on breaking balls, lower/more negative can be useful.
-            # Flip it so more depth ranks higher instead of raw higher IVB ranking higher.
+            # For breaking-ball vertical movement, more depth/lower VB should rank higher.
             elif col == "pfx_z" and bucket == "Breaking":
-                pct_val = -avg_val
-                pct_ref = sorted([-x for x in ref_values if not pd.isna(x)])
+                pct_val = -pct_val
+                pct_ref = sorted([-x for x in pct_ref if not pd.isna(x)])
                 pct = _percentile_from_sorted(pct_ref, pct_val)
 
             else:
-                pct = _percentile_from_sorted(ref_values, avg_val)
+                pct_ref = sorted([x for x in pct_ref if not pd.isna(x)])
+                pct = _percentile_from_sorted(pct_ref, pct_val)
 
+            # MLB average should display in the same units as the player average.
             mlb_avg = float(np.nanmean(ref_values)) if ref_values else None
-            metrics[f"{label}_avg"] = None if np.isnan(avg_val) else round(avg_val, 2)
+            if col in {"pfx_x", "pfx_z"} and mlb_avg is not None and not np.isnan(mlb_avg):
+                if abs(mlb_avg) <= 4:
+                    mlb_avg = mlb_avg * 12.0
+
+            metrics[f"{label}_avg"] = None if np.isnan(display_avg) else round(display_avg, 2)
             metrics[f"{label}_percentile"] = pct
             metrics[f"{label}_mlb_avg"] = None if mlb_avg is None or np.isnan(mlb_avg) else round(mlb_avg, 2)
 
         stuff_avg = float(pd.to_numeric(g["stuff_plus"], errors="coerce").mean())
         stuff_pct = _percentile_from_sorted(ref.get("stuff_plus", []), stuff_avg)
+
         metrics["stuff_plus_avg"] = None if np.isnan(stuff_avg) else round(stuff_avg, 2)
         metrics["stuff_plus_percentile"] = stuff_pct
         metrics["pitches"] = int(len(g))
+
         rows.append({**key_map, **metrics})
 
     def _sort_text(v: object) -> str:
