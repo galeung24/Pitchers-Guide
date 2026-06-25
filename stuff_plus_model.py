@@ -826,18 +826,40 @@ def _maybe_inches_to_feet(series: pd.Series) -> pd.Series:
     return values / 12.0 if _looks_like_inches(values) else values
 
 
+# def _normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+#     d = df.copy()
+
+#     for src, dst in TRACKMAN_TO_STATCAST.items():
+#         if src in d.columns and dst not in d.columns:
+#             if src in {"HorzBreak", "InducedVertBreak"}:
+#                 d[dst] = _maybe_inches_to_feet(d[src])
+#             else:
+#                 d[dst] = d[src]
+
+#     # Safety net: if a file already has pfx_x/pfx_z but they look like
+#     # TrackMan inches, convert them. This can happen after earlier preprocessing.
+#     for movement_col in ["pfx_x", "pfx_z"]:
+#         if movement_col in d.columns:
+#             d[movement_col] = _maybe_inches_to_feet(d[movement_col])
+
+#     return d
 def _normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     d = df.copy()
 
     for src, dst in TRACKMAN_TO_STATCAST.items():
         if src in d.columns and dst not in d.columns:
-            if src in {"HorzBreak", "InducedVertBreak"}:
+            if src == "HorzBreak":
+                # TrackMan HorzBreak sign is opposite of Statcast pfx_x.
+                # Convert inches to feet AND flip sign for model/percentiles.
+                d[dst] = -_maybe_inches_to_feet(d[src])
+            elif src == "InducedVertBreak":
+                # TrackMan IVB is inches; Statcast pfx_z is feet.
                 d[dst] = _maybe_inches_to_feet(d[src])
             else:
                 d[dst] = d[src]
 
-    # Safety net: if a file already has pfx_x/pfx_z but they look like
-    # TrackMan inches, convert them. This can happen after earlier preprocessing.
+    # Safety net: if pfx_x/pfx_z already exist and look like inches, convert to feet.
+    # Do NOT flip sign here because existing pfx_x is assumed to already be Statcast-style.
     for movement_col in ["pfx_x", "pfx_z"]:
         if movement_col in d.columns:
             d[movement_col] = _maybe_inches_to_feet(d[movement_col])
@@ -1284,18 +1306,63 @@ def build_metric_percentile_summary(scored_df: pd.DataFrame, artifacts: StuffPlu
             pct_val = avg_val
             pct_ref = ref_values
 
-            if col in {"pfx_x", "pfx_z"} and not np.isnan(avg_val):
-                # If avg_val looks like feet, convert to inches for display.
-                # If it somehow still looks like inches, leave display alone
-                # but convert percentile value to feet.
-                if abs(avg_val) <= 4:
-                    display_avg = avg_val * 12.0
-                    pct_val = avg_val
-                else:
-                    display_avg = avg_val
-                    pct_val = avg_val / 12.0
+            # if col in {"pfx_x", "pfx_z"} and not np.isnan(avg_val):
+            #     # If avg_val looks like feet, convert to inches for display.
+            #     # If it somehow still looks like inches, leave display alone
+            #     # but convert percentile value to feet.
+            #     if abs(avg_val) <= 4:
+            #         display_avg = avg_val * 12.0
+            #         pct_val = avg_val
+            #     else:
+            #         display_avg = avg_val
+            #         pct_val = avg_val / 12.0
 
-                # MLB reference should usually be feet, but guard just in case.
+            #     # MLB reference should usually be feet, but guard just in case.
+            #     if pct_ref and float(np.nanmedian(np.abs(pct_ref))) > 4:
+            #         pct_ref = [x / 12.0 for x in pct_ref]
+
+            # For display, use original TrackMan inches when available.
+            # For percentile math, use normalized Statcast-style feet.
+            if col == "pfx_x":
+            # Display HB using original TrackMan HorzBreak, so coaches still see inches.
+                if "HorzBreak" in scored_df.columns:
+                    display_avg = float(
+                        pd.to_numeric(
+                            scored_df.loc[g.index, "HorzBreak"],
+                            errors="coerce"
+                        ).mean()
+                    )
+                elif not np.isnan(avg_val):
+                    # If normalized pfx_x is in feet, convert back to TrackMan-style inches.
+                    display_avg = -avg_val * 12.0 if abs(avg_val) <= 4 else avg_val
+
+                # Percentile value should stay in normalized Statcast-style feet.
+                # If it somehow still looks like inches, convert to feet.
+                if not np.isnan(pct_val) and abs(pct_val) > 4:
+                    pct_val = pct_val / 12.0
+
+                # Reference should be feet, but guard in case it is inches.
+                if pct_ref and float(np.nanmedian(np.abs(pct_ref))) > 4:
+                    pct_ref = [x / 12.0 for x in pct_ref]
+
+            elif col == "pfx_z":
+                # Display VB using original TrackMan InducedVertBreak, so coaches still see inches.
+                if "InducedVertBreak" in scored_df.columns:
+                    display_avg = float(
+                        pd.to_numeric(
+                            scored_df.loc[g.index, "InducedVertBreak"],
+                            errors="coerce"
+                        ).mean()
+                    )
+                elif not np.isnan(avg_val):
+                    # If normalized pfx_z is in feet, convert back to inches.
+                    display_avg = avg_val * 12.0 if abs(avg_val) <= 4 else avg_val
+
+                    # Percentile value should stay in normalized Statcast-style feet.
+                if not np.isnan(pct_val) and abs(pct_val) > 4:
+                    pct_val = pct_val / 12.0
+
+                # Reference should be feet, but guard in case it is inches.
                 if pct_ref and float(np.nanmedian(np.abs(pct_ref))) > 4:
                     pct_ref = [x / 12.0 for x in pct_ref]
 
@@ -1303,7 +1370,9 @@ def build_metric_percentile_summary(scored_df: pd.DataFrame, artifacts: StuffPlu
             # For RHP breaking balls, glove-side sweep is usually negative HB.
             # Flip RHP breaking-ball HB so more sweep ranks higher.
             if col == "pfx_x" and bucket == "Breaking":
-                if throws == "R":
+                # After TrackMan HB is converted to Statcast-style pfx_x,
+                # RHP glove-side slider sweep is positive, so only flip LHP.
+                if throws == "L":
                     pct_val = -pct_val
                     pct_ref = [-x for x in pct_ref]
 
